@@ -20,19 +20,19 @@ np.array(dataset["train"]["label"]).sum() / len(dataset["train"]["label"])
 
 model_checkpoint = "distilbert-base-uncased"
 
-# define label maps
+# 定义标签映射
 id2label = {0: "Negative", 1: "Positive"}
 label2id = {"Negative": 0, "Positive": 1}
 
-# generate classification model from model_checkpoint
+# 加载模型
 model = AutoModelForSequenceClassification.from_pretrained(
     model_checkpoint, num_labels=2, id2label=id2label, label2id=label2id
 )
 
-# create tokenizer
+# 创建分词器
 tokenizer = AutoTokenizer.from_pretrained(model_checkpoint, add_prefix_space=True)
 
-# add pad token if none exists
+# 添加填充 token
 if tokenizer.pad_token is None:
     tokenizer.add_special_tokens({"pad_token": "[PAD]"})
     model.resize_token_embeddings(len(tokenizer))
@@ -40,10 +40,9 @@ if tokenizer.pad_token is None:
 
 # create tokenize function
 def tokenize_function(examples):
-    # extract text
     text = examples["text"]
 
-    # tokenize and truncate text
+    # 分词处理
     tokenizer.truncation_side = "left"
     tokenized_inputs = tokenizer(
         text, return_tensors="np", truncation=True, max_length=512
@@ -52,17 +51,13 @@ def tokenize_function(examples):
     return tokenized_inputs
 
 
-# tokenize training and validation datasets
+# 对数据集进行分词处理
 tokenized_dataset = dataset.map(tokenize_function, batched=True)
 
-# create data collator
 data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
-# import accuracy evaluation metric
 accuracy = evaluate.load("accuracy")
 
-
-# define an evaluation function to pass into trainer later
 def compute_metrics(p):
     predictions, labels = p
     predictions = np.argmax(predictions, axis=1)
@@ -76,14 +71,14 @@ peft_config = LoraConfig(
 model = get_peft_model(model, peft_config)
 model.print_trainable_parameters()
 
-# hyperparameters
+
 lr = 1e-3
 batch_size = 4
 num_epochs = 10
 
-# define training arguments
+# 训练参数
 training_args = TrainingArguments(
-    output_dir="checkPoints/" + model_checkpoint,
+    output_dir="checkPoints/" + model_checkpoint, # 训练产生的 checkpoint 存储位置
     learning_rate=lr,
     per_device_train_batch_size=batch_size,
     per_device_eval_batch_size=batch_size,
@@ -94,7 +89,7 @@ training_args = TrainingArguments(
     load_best_model_at_end=True,
 )
 
-# creater trainer object
+# 创建训练器
 trainer = Trainer(
     model=model,
     args=training_args,
@@ -105,7 +100,7 @@ trainer = Trainer(
     compute_metrics=compute_metrics,
 )
 
-# train model
+# 训练模型
 trainer.train()
 end = time.perf_counter()
 model.to("mps")
