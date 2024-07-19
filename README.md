@@ -1,10 +1,9 @@
+## 简介
 尝试通过 [Hugging Face Transformer](https://huggingface.co/docs/transformers/index) 库调用 LLMs。
-
-<hr/>
 
 ## 环境配置
 
-+ Python interpreter version: `3.10.14`
++ Python Interpreter Version: `3.10.14`
 + Python Env: `venv`
 + Package Manager: `pip`
 
